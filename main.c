@@ -3,8 +3,8 @@
 #include <fsl_debug_console.h>
 #include <board.h>
 #include <stdio.h>
-#include <time.h>
 #include <stdlib.h>
+#include <time.h>
 #include <string.h>
 #include <limits.h>
 #include "utils.h"
@@ -299,7 +299,8 @@ int main() {
 				LEDBlue_On();
 				printf("Congrats you finished the game!\r\n");
 				printf("You ended with %d gold\r\n", total_gold);
-				printf("The max gold you can collect is: %d \r\n", max_gold);			
+				printf("The max gold you can collect is: %d \r\n", max_gold);	
+				line_divide();		
 				break;
 			} else {
 				LEDGreen_On();
