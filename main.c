@@ -106,8 +106,8 @@ void construct_map_random(int num, int deviation, int fin_gold) {
 	time_t t;
 	srand((unsigned) time(&t)); // initialising random number generator
 	
-	map_piece_t *arr[num];
 	int n = num-2;
+	map_piece_t *arr[n];
 
 	//building map pieces
 	init = make_piece(0, base_duration);
@@ -116,7 +116,7 @@ void construct_map_random(int num, int deviation, int fin_gold) {
 		int dur = rand() % deviation;
 		arr[i] = make_piece(gold, base_duration+dur);
 	}
-	finish = make_piece(100, base_duration);
+	finish = make_piece(fin_gold, base_duration);
 
 	//linking map pieces to make a map
 	int has_exit = 0; //0 if no exit, 1 if at least one exit
@@ -140,7 +140,6 @@ void construct_map_random(int num, int deviation, int fin_gold) {
 				arr[i]->exits[j] = NULL;
 			} 
 			//give an exit if no exit so far
-			/*
 			if(j == 5 && !has_exit) {
 				int rand_piece = rand() % n; //determine exit at random
 				if(rand_piece == i) {
@@ -150,7 +149,7 @@ void construct_map_random(int num, int deviation, int fin_gold) {
 				} else {
 					arr[i]->exits[j] = arr[rand_piece];
 				}
-			}*/
+			}
 		}
 	}
 	if(!can_finish) {
