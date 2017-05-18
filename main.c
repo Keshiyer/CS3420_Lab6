@@ -261,6 +261,8 @@ void intro() {
 		line_divide();
 		printf("The random maze will now begin!\r\n");
 		line_divide();
+		printf("Pieces, Deviation, Max Gold: %d %d %d \r\n", n, deviation, fin_gold);
+		line_divide();
 		construct_map_random(n,deviation,fin_gold);
 	}
 }
@@ -269,8 +271,8 @@ int main() {
 	hardware_init();
 	LED_Initialize();
 	Accelerometer_Initialize(); 
-	
-	intro();
+
+	intro(); //get user data and make map
 	current_piece = init;
 	start_maze();
 	
@@ -283,6 +285,13 @@ int main() {
 		} else {
 			LEDGreen_Toggle();
 		}
+		//if not finished after a long time then assist
+		/*if(abs(total_gold) > 10*total_pieces) {
+			direction_t dir = find_optimal_route();
+			line_divide();
+			printf("HINT: move in direction \r\n");
+			line_divide();
+		} */
 		
 		if(is_blocked) {
 			LEDRed_On();
