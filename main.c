@@ -8,6 +8,7 @@
 #include <limits.h>
 #include "utils.h"
 
+void line_divide();
 /************************************* Structs ****************************************/
 
 /*Define a structure for realtime to keep track of players current time*/
@@ -40,7 +41,7 @@ typedef enum {
 ACCELEROMETER_STATE state; 
 realtime_t current_time; // The current time relative to process_start
 realtime_t start_time; //starts counting once user is in correct direction
-realtime_t base_duration; //base duration for moving
+realtime_t base_duration = 3000; //base duration for moving
 map_piece_t * current_piece; //current map the user is in
 map_piece_t * init; //starting point of map
 map_piece_t * finish; //finish line of maze
@@ -48,7 +49,6 @@ int is_blocked = 0; //if 1 then user is blocked, else unblocked
 int total_gold; //total gold collected by user
 int total_pieces; //total number of pieces in the maze
 int max_gold; //max gold the user can collect
-int base_duration = 3000; //fixed duration to move from one piece to another
 LEDcolor led_color; //current color of LED
 
 /****************************** Interrupt Handler ****************************/
@@ -269,6 +269,7 @@ int main() {
 	Accelerometer_Initialize(); 
 	
 	current_piece = init;
+	intro();
 	start_maze();
 	
 	while(1){
