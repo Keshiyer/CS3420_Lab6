@@ -3,6 +3,7 @@
 #include <fsl_debug_console.h>
 #include <board.h>
 #include <stdio.h>
+#include <time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
@@ -209,10 +210,6 @@ int check_map(ACCELEROMETER_STATE state) {
 		return 1;
 	}
 }
- /*
-direction_t find_optimal_route() {
-
-}*/
 
 /*************************** Main running functions **************************/
 
@@ -286,13 +283,7 @@ int main() {
 		} else {
 			LEDGreen_Toggle();
 		}
-		//if not finished after a long time then assist
-		/*if(abs(total_gold) > 10*total_pieces) {
-			direction_t dir = find_optimal_route();
-			line_divide();
-			printf("HINT: move in direction \r\n");
-			line_divide();
-		} */
+		
 		if(is_blocked) {
 			LEDRed_On();
 		} else {
