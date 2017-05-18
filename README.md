@@ -5,9 +5,8 @@ Authors: Keshav Iyer (ki79)
 	 Rohit Curucundhi (rc563) 
 
 
-This zip file contains main.c, utils.c, utils.h, and maze.c. These are all the files needed to run this project. main.c contains 
-code for driving the maze from the board. utils.h, and utils.c are files for initalizing and turning on the LED's. maze.c contains
-code for other mazes that can be loaded for the game. 
+This zip file contains main.c, utils.c, and utils.h. These are all the files needed to run this project. main.c contains 
+code for driving the maze from the board. utils.h, and utils.c are files for initalizing and turning on the LED's. 
 
 System Requirements: 
 
