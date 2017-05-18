@@ -130,8 +130,8 @@ int check_map(ACCELEROMETER_STATE state){
 				current_piece = current_piece->exits[dir];
 				total_gold += current_piece->gold; 
 				printf("You currently have %d gold with you.\n", total_gold);
+				printf("\n-------------------------------------------------------\n");
 				start_time = 0;
-				return 1;
 			}
 		}
 		return 0;
@@ -160,7 +160,7 @@ int main() {
 	LED_Initialize();
 	Accelerometer_Initialize(); 
 	
-	base_duration = 2000;
+	base_duration = 3000;
 	construct_map();
 	current_piece = init;
 	process_start();
@@ -169,7 +169,7 @@ int main() {
 		Accelerometer_GetState(&state);
 		//debug_printf("%5d %5d %5d\r\n", state.x, state.y, state.z);
 		is_blocked = check_map(state);
-		if(LEDcolor == RED) {
+		if(led_color == RED) {
 			LEDRed_Toggle();
 		} else {
 			LEDGreen_Toggle();
@@ -181,7 +181,7 @@ int main() {
 				LEDBlue_On();
 				printf("Congrats you finished the game!\n");
 				printf("You ended with %d gold\n", total_gold);
-				printf("The max gold you can collect is: \n", max_gold);			
+				printf("The max gold you can collect is: %d \n", max_gold);			
 				break;
 			} else {
 				LEDGreen_On();
