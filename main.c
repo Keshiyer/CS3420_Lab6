@@ -35,7 +35,7 @@ typedef enum {
 	ZNEG,
 } direction_t;
 
-/********************************** Global variables ************************************/
+/******************************* Global variables ****************************/
 
 ACCELEROMETER_STATE state; 
 realtime_t current_time; // The current time relative to process_start
@@ -44,19 +44,21 @@ realtime_t base_duration; //base duration for moving
 map_piece_t * current_piece; //current map the user is in
 map_piece_t * init; //starting point of map
 map_piece_t * finish; //finish line of maze
-int is_blocked = 0; //if 1 then blocked, else unblocked. Global to keep track of blocking
+int is_blocked = 0; //if 1 then user is blocked, else unblocked
 int total_gold; //total gold collected by user
+int total_pieces; //total number of pieces in the maze
 int max_gold; //max gold the user can collect
+int base_duration = 3000; //fixed duration to move from one piece to another
 LEDcolor led_color; //current color of LED
 
-/******************************* Interrupt Handler **********************************/
+/****************************** Interrupt Handler ****************************/
 
 void PIT0_IRQHandler(void) {
 	current_time++;
 	PIT_TFLG0 = 1;
 }
 
-/******************************* Helper functions **********************************/
+/*************************** Map creation functions **************************/
 
 /* Initializes a single piece of the map */
 map_piece_t *make_piece(int g, realtime_t d) {
@@ -71,7 +73,7 @@ map_piece_t *make_piece(int g, realtime_t d) {
 }
 
 /* function to make a set map */
-void construct_map() {
+void construct_set_map() {
 	map_piece_t *arr[5];
 
 	//building map pieces
@@ -93,6 +95,7 @@ void construct_map() {
 	arr[3]->exits[YNEG] = arr[4];
 	arr[4]->exits[ZNEG] = finish;
 
+	total_pieces = 7;
 	max_gold = 100;
 }
 
@@ -104,7 +107,7 @@ void construct_map_random(int num, int deviation, int fin_gold) {
 	//building map pieces
 	init = make_piece(0, base_duration);
 	for(int i = 0; i < n; i++) {
-		int gold = rand() % 50; 
+		int gold = rand() % 10; 
 		int dur = rand() % deviation;
 		arr[i] = make_piece(-gold, base_duration+dur);
 	}
@@ -112,7 +115,7 @@ void construct_map_random(int num, int deviation, int fin_gold) {
 
 	//linking map pieces to make a map
 	int has_exit = 0; //0 if no exit, 1 if at least one exit
-	int can_finish = 0; //0 if no piece can reach finish(excluding init), 1 otherwise
+	int can_finish = 0; //0 if no piece can reach finish, 1 otherwise
 	init->exits[ZNEG] = finish;
 	init->exits[YPOS] = arr[0];
 	for(int i = 0; i < n; i++) {
@@ -121,7 +124,8 @@ void construct_map_random(int num, int deviation, int fin_gold) {
 			if(dec) {
 				int rand_piece = rand() % n; //determine exit at random
 				if(rand_piece == i) {
-					arr[i]->exits[j] = finish; //jump to finish if we get the same piece
+					//jump to finish if we get the same piece
+					arr[i]->exits[j] = finish; 
 					can_finish = 1;
 				} else {
 					arr[i]->exits[j] = arr[rand_piece];
@@ -134,7 +138,8 @@ void construct_map_random(int num, int deviation, int fin_gold) {
 			if(j == 5 && !has_exit) {
 				int rand_piece = rand() % n; //determine exit at random
 				if(rand_piece == i) {
-					arr[i]->exits[j] = finish; //jump to finish if we get the same piece
+					//jump to finish if we get the same piece
+					arr[i]->exits[j] = finish; 
 					can_finish = 1;
 				} else {
 					arr[i]->exits[j] = arr[rand_piece];
@@ -147,9 +152,11 @@ void construct_map_random(int num, int deviation, int fin_gold) {
 		int d = rand() % 6;
 		arr[p]->exits[d] = finish;
 	}
-
+	total_pieces = num;
 	max_gold = fin_gold;
 }
+
+/*************************** Map execution functions *************************/
 
 /* return current direction of user */
 direction_t extract_direction(ACCELEROMETER_STATE state) {
@@ -172,20 +179,22 @@ direction_t extract_direction(ACCELEROMETER_STATE state) {
 }
 
 /* check map and return 0 if correct direction, 1 if wrong direction */
-int check_map(ACCELEROMETER_STATE state){
+int check_map(ACCELEROMETER_STATE state) {
 	direction_t dir = extract_direction(state);
 	if(current_piece->exits[dir] != NULL) {
 		if(start_time == 0) {
 			start_time = current_time;
 		} else {
 			//computing difference between current time and start time
-			realtime_t diff = start_time < current_time ? current_time - start_time : current_time + (ULONG_MAX - start_time);
+			realtime_t diff = 
+				start_time < current_time ? current_time - start_time : 
+				current_time + (ULONG_MAX - start_time);
 			//checking if we have passed the duration
 			if(diff > current_piece->duration) {
 				current_piece = current_piece->exits[dir];
 				total_gold += current_piece->gold; 
 				printf("You currently have %d gold with you.\r\n", total_gold);
-				printf("-------------------------------------------------------\r\n");
+				line_divide();
 				start_time = 0;
 			}
 		}
@@ -196,7 +205,19 @@ int check_map(ACCELEROMETER_STATE state){
 	}
 }
 
-void process_start () {
+direction_t find_optimal_route() {
+	
+}
+
+/*************************** Main running functions **************************/
+
+/* line divide */
+void line_divide() {
+	printf("------------------------------------------\r\n");
+}
+
+/* function to initailise clocks and start the maze */
+void start_maze () {
 	NVIC_EnableIRQ(PIT0_IRQn); //enable PIT0 Interrupts
 	SIM->SCGC6 |= SIM_SCGC6_PIT_MASK; // Enable clock to PIT module 
 
@@ -210,26 +231,62 @@ void process_start () {
 	PIT->CHANNEL[0].TCTRL = 3; //start timer
 }
 
-int main() {
+/* function to get user input */
+void intro() {
 	printf("Welcome to the MAZE!\r\n");
+	line_divide();
+	char input;
+	printf("Would you prefer a set map or a random map? \r\n");
+	printf("For a set map type S and for a random map type R: ");
+	scanf("%c", &input);
+	printf("\r\n");
+	line_divide();
+	if(input == 'S') {
+		printf("The set maze will now begin!\r\n");
+		line_divide();
+		construct_set_map();
+	} else {
+		int n, deviation, fin_gold;
+		printf("Enter number of pieces of maze: ");
+		scanf("%d", &n);
+		printf("\r\n");
+		printf("Enter max deviation of duration between pieces: ");
+		scanf("%d", &deviation);
+		printf("\r\n");
+		printf("Enter amount of gold for final piece: ");
+		scanf("%d", &fin_gold);
+		printf("\r\n");
+		line_divide();
+		printf("The random maze will now begin!\r\n");
+		line_divide();
+		construct_map_random(n,deviation,fin_gold);
+	}
+}
+
+int main() {
 	hardware_init();
 	LED_Initialize();
 	Accelerometer_Initialize(); 
 	
-	base_duration = 3000;
-	construct_map();
 	current_piece = init;
-	process_start();
+	start_maze();
 	
 	while(1){
 		Accelerometer_GetState(&state);
-		//debug_printf("%5d %5d %5d\r\n", state.x, state.y, state.z);
 		is_blocked = check_map(state);
+		//turn LED off before turning new one on later
 		if(led_color == RED) {
 			LEDRed_Toggle();
 		} else {
 			LEDGreen_Toggle();
 		}
+		//if not finished after a long time then assist
+		if(abs(total_gold) > 10*total_pieces) {
+			direction_t dir = find_optimal_route();
+			line_divide();
+			printf("HINT: move in direction \r\n");
+			line_divide();
+		} 
 		if(is_blocked) {
 			LEDRed_On();
 		} else {
