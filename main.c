@@ -8,6 +8,8 @@
 #include <limits.h>
 #include "utils.h"
 
+void line_divide();
+
 /************************************* Structs ****************************************/
 
 /*Define a structure for realtime to keep track of players current time*/
@@ -40,7 +42,7 @@ typedef enum {
 ACCELEROMETER_STATE state; 
 realtime_t current_time; // The current time relative to process_start
 realtime_t start_time; //starts counting once user is in correct direction
-realtime_t base_duration; //base duration for moving
+realtime_t base_duration = 3000; //base duration for moving
 map_piece_t * current_piece; //current map the user is in
 map_piece_t * init; //starting point of map
 map_piece_t * finish; //finish line of maze
@@ -48,7 +50,6 @@ int is_blocked = 0; //if 1 then user is blocked, else unblocked
 int total_gold; //total gold collected by user
 int total_pieces; //total number of pieces in the maze
 int max_gold; //max gold the user can collect
-int base_duration = 3000; //fixed duration to move from one piece to another
 LEDcolor led_color; //current color of LED
 
 /****************************** Interrupt Handler ****************************/
@@ -101,15 +102,18 @@ void construct_set_map() {
 
 /* function to create a random map */
 void construct_map_random(int num, int deviation, int fin_gold) {
+	time_t t;
+	srand((unsigned) time(&t)); // initialising random number generator
+	
 	map_piece_t *arr[num];
 	int n = num-2;
 
 	//building map pieces
 	init = make_piece(0, base_duration);
 	for(int i = 0; i < n; i++) {
-		int gold = rand() % 10; 
+		int gold = -(rand() % 10); 
 		int dur = rand() % deviation;
-		arr[i] = make_piece(-gold, base_duration+dur);
+		arr[i] = make_piece(gold, base_duration+dur);
 	}
 	finish = make_piece(100, base_duration);
 
@@ -135,6 +139,7 @@ void construct_map_random(int num, int deviation, int fin_gold) {
 				arr[i]->exits[j] = NULL;
 			} 
 			//give an exit if no exit so far
+			/*
 			if(j == 5 && !has_exit) {
 				int rand_piece = rand() % n; //determine exit at random
 				if(rand_piece == i) {
@@ -144,7 +149,7 @@ void construct_map_random(int num, int deviation, int fin_gold) {
 				} else {
 					arr[i]->exits[j] = arr[rand_piece];
 				}
-			}
+			}*/
 		}
 	}
 	if(!can_finish) {
@@ -269,6 +274,7 @@ int main() {
 	Accelerometer_Initialize(); 
 	
 	current_piece = init;
+	intro();
 	start_maze();
 	
 	while(1){
