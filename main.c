@@ -3,6 +3,7 @@
 #include <fsl_debug_console.h>
 #include <board.h>
 #include <stdio.h>
+#include <time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
@@ -273,8 +274,8 @@ int main() {
 	LED_Initialize();
 	Accelerometer_Initialize(); 
 	
-	current_piece = init;
 	intro();
+	current_piece = init;
 	start_maze();
 	
 	while(1){
