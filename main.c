@@ -4,6 +4,7 @@
 #include <board.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <limits.h>
 #include "utils.h"
 
@@ -12,16 +13,19 @@
 /*Define a structure for realtime to keep track of players current time*/
 typedef unsigned long realtime_t;
 
-typedef struct map_piece map_piece_t;
 /* data structure of entire map */
+typedef struct map_piece map_piece_t;
+
 struct map_piece {
 	int gold;
 	realtime_t duration;
 	map_piece_t *exits[6]; //stores 
 };
 
+/* enum to determine which led is on */
 typedef enum { RED, GREEN } LEDcolor;
 
+/* enum for direction of user */
 typedef enum {
 	XPOS,
 	XNEG,
@@ -34,14 +38,13 @@ typedef enum {
 /********************************** Global variables ************************************/
 
 ACCELEROMETER_STATE state; 
-//MAGNETOMETER_STATE mstate; 
-int is_blocked = 0; //if 1 then blocked, else unblocked. Global to keep track of blocking
 realtime_t current_time; // The current time relative to process_start
 realtime_t start_time; //starts counting once user is in correct direction
 realtime_t base_duration; //base duration for moving
 map_piece_t * current_piece; //current map the user is in
 map_piece_t * init; //starting point of map
 map_piece_t * finish; //finish line of maze
+int is_blocked = 0; //if 1 then blocked, else unblocked. Global to keep track of blocking
 int total_gold; //total gold collected by user
 int max_gold; //max gold the user can collect
 LEDcolor led_color; //current color of LED
@@ -55,6 +58,7 @@ void PIT0_IRQHandler(void) {
 
 /******************************* Helper functions **********************************/
 
+/* Initializes a single piece of the map */
 map_piece_t *make_piece(int g, realtime_t d) {
 	map_piece_t *temp = malloc(sizeof(map_piece_t));
 	if (temp == NULL){
@@ -66,6 +70,7 @@ map_piece_t *make_piece(int g, realtime_t d) {
 	return temp;
 }
 
+/* function to make a set map */
 void construct_map() {
 	map_piece_t *arr[5];
 
@@ -118,13 +123,15 @@ int check_map(ACCELEROMETER_STATE state){
 		if(start_time == 0) {
 			start_time = current_time;
 		} else {
+			//computing difference between current time and start time
 			realtime_t diff = start_time < current_time ? current_time - start_time : current_time + (ULONG_MAX - start_time);
 			//checking if we have passed the duration
 			if(diff > current_piece->duration) {
 				current_piece = current_piece->exits[dir];
 				total_gold += current_piece->gold; 
-				printf("You currently have %d gold with you.", total_gold);
+				printf("You currently have %d gold with you.\n", total_gold);
 				start_time = 0;
+				return 1;
 			}
 		}
 		return 0;
@@ -136,27 +143,24 @@ int check_map(ACCELEROMETER_STATE state){
 
 void process_start () {
 	NVIC_EnableIRQ(PIT0_IRQn); //enable PIT0 Interrupts
-	SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK; //Enables the clock
-	SIM->SCGC6 = SIM_SCGC6_PIT_MASK; // Enable clock to PIT module 
+	SIM->SCGC6 |= SIM_SCGC6_PIT_MASK; // Enable clock to PIT module 
 
 	PIT->CHANNEL[0].LDVAL = DEFAULT_SYSTEM_CLOCK/1000;
 	PIT_MCR &= ~(1 << 1);
-	PIT_TCTRL0 = 1;
 
 	total_gold = 0;
 	current_time = 0;
 
 	//INTERRUPT SETTINGS
-	PIT->CHANNEL[0].TCTRL = 0x2; //set TIE bit to 1, requests interr
-	PIT->CHANNEL[0].TCTRL = 0x3; //enable timer and keep interr
+	PIT->CHANNEL[0].TCTRL = 3; //start timer
 }
 
 int main() {
 	hardware_init();
+	LED_Initialize();
 	Accelerometer_Initialize(); 
-	//Magnetometer_Initialize();
 	
-	base_duration = 1000;
+	base_duration = 2000;
 	construct_map();
 	current_piece = init;
 	process_start();
