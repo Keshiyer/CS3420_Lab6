@@ -130,8 +130,8 @@ int check_map(ACCELEROMETER_STATE state){
 				current_piece = current_piece->exits[dir];
 				total_gold += current_piece->gold; 
 				printf("You currently have %d gold with you.\r\n", total_gold);
+				printf("-------------------------------------------------------\r\n");
 				start_time = 0;
-				return 1;
 			}
 		}
 		return 0;
@@ -156,11 +156,12 @@ void process_start () {
 }
 
 int main() {
+	printf("Welcome to the MAZE!\r\n");
 	hardware_init();
 	LED_Initialize();
 	Accelerometer_Initialize(); 
 	
-	base_duration = 2000;
+	base_duration = 3000;
 	construct_map();
 	current_piece = init;
 	process_start();
@@ -181,7 +182,7 @@ int main() {
 				LEDBlue_On();
 				printf("Congrats you finished the game!\r\n");
 				printf("You ended with %d gold\r\n", total_gold);
-				printf("The max gold you can collect is: %d\r\n", max_gold);			
+				printf("The max gold you can collect is: %d \r\n", max_gold);			
 				break;
 			} else {
 				LEDGreen_On();
