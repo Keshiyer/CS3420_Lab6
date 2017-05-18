@@ -75,13 +75,13 @@ void construct_map() {
 	map_piece_t *arr[5];
 
 	//building map pieces
-	init = make_piece(0,base_duration);
-	arr[0] = make_piece(-5,base_duration);
-	arr[1] = make_piece(-7,base_duration);
-	arr[2] = make_piece(-2,base_duration);
-	arr[3] = make_piece(-1,base_duration);
-	arr[4] = make_piece(-10,base_duration);
-	finish = make_piece(100,base_duration);
+	init = make_piece(0, base_duration);
+	arr[0] = make_piece(-5, base_duration);
+	arr[1] = make_piece(-7, base_duration);
+	arr[2] = make_piece(-2, base_duration);
+	arr[3] = make_piece(-1, base_duration);
+	arr[4] = make_piece(-10, base_duration);
+	finish = make_piece(100, base_duration);
 
 	//linking map pieces to make a map
 	init->exits[YPOS] = arr[0];
@@ -94,6 +94,61 @@ void construct_map() {
 	arr[4]->exits[ZNEG] = finish;
 
 	max_gold = 100;
+}
+
+/* function to create a random map */
+void construct_map_random(int num, int deviation, int fin_gold) {
+	map_piece_t *arr[num];
+	int n = num-2;
+
+	//building map pieces
+	init = make_piece(0, base_duration);
+	for(int i = 0; i < n; i++) {
+		int gold = rand() % 50; 
+		int dur = rand() % deviation;
+		arr[i] = make_piece(-gold, base_duration+dur);
+	}
+	finish = make_piece(100, base_duration);
+
+	//linking map pieces to make a map
+	int has_exit = 0; //0 if no exit, 1 if at least one exit
+	int can_finish = 0; //0 if no piece can reach finish(excluding init), 1 otherwise
+	init->exits[ZNEG] = finish;
+	init->exits[YPOS] = arr[0];
+	for(int i = 0; i < n; i++) {
+		for(int j = 0; j < 6; j++){
+			int dec = rand() % 2; //if 1 then get an exit, if 0 then no exit
+			if(dec) {
+				int rand_piece = rand() % n; //determine exit at random
+				if(rand_piece == i) {
+					arr[i]->exits[j] = finish; //jump to finish if we get the same piece
+					can_finish = 1;
+				} else {
+					arr[i]->exits[j] = arr[rand_piece];
+				}
+				has_exit = 1;
+			} else {
+				arr[i]->exits[j] = NULL;
+			} 
+			//give an exit if no exit so far
+			if(j == 5 && !has_exit) {
+				int rand_piece = rand() % n; //determine exit at random
+				if(rand_piece == i) {
+					arr[i]->exits[j] = finish; //jump to finish if we get the same piece
+					can_finish = 1;
+				} else {
+					arr[i]->exits[j] = arr[rand_piece];
+				}
+			}
+		}
+	}
+	if(!can_finish) {
+		int p = rand() % n;
+		int d = rand() % 6;
+		arr[p]->exits[d] = finish;
+	}
+
+	max_gold = fin_gold;
 }
 
 /* return current direction of user */
