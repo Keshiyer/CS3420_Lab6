@@ -228,15 +228,19 @@ int prev[total_pieces];
 state_t state[total_pieces];
 
 /* returns string equivalent of a direction */
-string to_direction(direction_t dir) {
+string direction_to_string(direction_t dir) {
 	switch(x) {
-		case XPOS: return "positive x";
-		case XNEG: return "negative x";
-		case YPOS: return "positive y";
-		case YNEG: return "negative y";
-		case ZPOS: return "positive z";
-		case ZNEG: return "negative z";
+		case XPOS: return "Right";
+		case XNEG: return "Left";
+		case YPOS: return "Forward";
+		case YNEG: return "Backward";
+		case ZPOS: return "Up";
+		case ZNEG: return "Down";
 	}
+}
+
+void print_path() {
+	
 }
 
 void insert_queue(map_piece_t * vertex) {
