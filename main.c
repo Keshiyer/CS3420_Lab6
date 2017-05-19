@@ -4,7 +4,6 @@
 #include <board.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <string.h>
 #include <limits.h>
 #include "utils.h"
@@ -103,8 +102,7 @@ void construct_set_map() {
 
 /* function to create a random map */
 void construct_map_random(int num, int deviation, int fin_gold) {
-	time_t t;
-	srand((unsigned) time(&t)); // initialising random number generator
+	srand(num); // initialising random number generator
 	
 	int n = num-2;
 	map_piece_t *arr[n];
