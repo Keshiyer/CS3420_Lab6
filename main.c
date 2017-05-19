@@ -19,9 +19,10 @@ typedef unsigned long realtime_t;
 typedef struct map_piece map_piece_t;
 
 struct map_piece {
+	int index; //unique index for each piece
 	int gold;
 	realtime_t duration;
-	map_piece_t *exits[6]; //stores 
+	map_piece_t *exits[6]; //stores possible exits
 };
 
 /* enum to determine which led is on */
@@ -35,7 +36,15 @@ typedef enum {
 	YNEG,
 	ZPOS,
 	ZNEG,
+	TRAP,
 } direction_t;
+
+/* enum for state of piece while doing BFS */
+typedef enum {
+	initial,
+	waiting,
+	visited,
+} state_t;
 
 /******************************* Global variables ****************************/
 
@@ -50,6 +59,7 @@ int is_blocked = 0; //if 1 then user is blocked, else unblocked
 int total_gold; //total gold collected by user
 int total_pieces; //total number of pieces in the maze
 int max_gold; //max gold the user can collect
+int index_count = 0; //keep track of index while making pieces
 LEDcolor led_color; //current color of LED
 
 /****************************** Interrupt Handler ****************************/
@@ -67,6 +77,7 @@ map_piece_t *make_piece(int g, realtime_t d) {
 	if (temp == NULL){
 		return NULL;
 	}
+	temp->index = index_count++;
 	temp->gold = g; 
 	temp->duration = d;
 	memset(temp->exits, NULL, 6 * sizeof(map_piece_t *));
@@ -208,6 +219,108 @@ int check_map(ACCELEROMETER_STATE state) {
 	}
 }
 
+/*************************** Hint helper functions ***************************/
+
+map_piece_t *queue[total_pieces], front = -1, rear = -1;
+int prev[total_pieces];
+state_t state[total_pieces];
+
+/* returns string equivalent of a direction */
+string to_direction(direction_t dir) {
+	switch(x) {
+		case XPOS: return "positive x";
+		case XNEG: return "negative x";
+		case YPOS: return "positive y";
+		case YNEG: return "negative y";
+		case ZPOS: return "positive z";
+		case ZNEG: return "negative z";
+	}
+}
+
+void insert_queue(map_piece_t * vertex) {
+    if(rear == MAX-1)
+        printf("Queue Overflow\n");
+    else
+    {
+        if(front == -1) 
+            front = 0;
+        rear = rear+1;
+        queue[rear] = vertex ;
+    }
+}
+ 
+int isEmpty_queue() {
+    if(front == -1 || front > rear)
+        return 1;
+    else
+        return 0;
+}
+ 
+map_piece_t* delete_queue() {
+    map_piece_t *delete_item;
+    if(front == -1 || front > rear)
+    {
+        printf("Queue Underflow\n");
+        exit(1);
+    }
+    
+    delete_item = queue[front];
+    front = front+1;
+    return delete_item;
+}
+
+direction_t find_optimal_route() {
+
+	//initialise state of all nodes to initial first
+	for(int i = 0; i < total_pieces; i++) {
+		state[i] = initial;
+		prev[i] = -1;
+	}
+
+	insert_queue(current_piece);
+	state[current_piece->index] = waiting;
+
+	int found_finish = 0; //0 = not found a finishing point, 1 = found
+	while(!isEmpty_queue())
+    {
+        map_piece_t *v = delete_queue();
+        state[v->index] = visited;
+        
+        for(int i = 0; i < 6; i++)
+        {
+        	map_piece_t *next = v->exits[i];
+            if(next != NULL && state[next->index] == initial) 
+            {
+                insert_queue(next);
+                prev[next->index] = v->index;
+                state[next->index] = waiting;
+                if(next == finish) {
+                	found_finish = next->index;
+                	break;
+                }
+            }
+        }
+        if(found_finish != 0)
+        	break;
+    }
+    if(found_finish == 0) {
+    	return TRAP;
+    } else {
+    	//check trace of prev to find next element to go to
+    	int i = found_finish;
+    	int previous = -1;
+    	while(prev[i] != -1) {
+    		previous = prev[i];
+    		i = prev[i];
+    	}
+    	for(int j = 0; j < 6; j++) {
+    		if((current_piece->exits[j])->index == previous)
+    			return j;
+    	}
+    	return TRAP;
+    }
+}
+
 /*************************** Main running functions **************************/
 
 /* line divide */
@@ -283,12 +396,16 @@ int main() {
 			LEDGreen_Toggle();
 		}
 		//if not finished after a long time then assist
-		/*if(abs(total_gold) > 10*total_pieces) {
+		if(abs(total_gold) > 5*total_pieces) {
 			direction_t dir = find_optimal_route();
 			line_divide();
-			printf("HINT: move in direction \r\n");
+			if(dir == TRAP) {
+				printf("Oops you are trapped. Try the maze again!\r\n");
+			} else {
+				printf("HINT: move in the %s direction \r\n", to_direction(dir));
+			}
 			line_divide();
-		} */
+		} 
 		
 		if(is_blocked) {
 			LEDRed_On();
